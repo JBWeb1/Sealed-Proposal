@@ -166,6 +166,7 @@ body{background:radial-gradient(ellipse at 50% 300px,var(--ground-hi),var(--grou
 .swatch[aria-pressed=true]{box-shadow:0 0 0 2px var(--ink)}
 .link{font-family:var(--util);font-size:13px;letter-spacing:.06em;background:none;border:0;text-decoration:underline;text-underline-offset:4px;color:var(--ink-soft);padding:10px 2px;min-height:40px;cursor:pointer}
 .link:hover{color:var(--ink)}
+a.link{display:inline-flex;align-items:center;box-sizing:border-box}
 .link:focus-visible,.inkbtn:focus-visible,.swatch:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
 .err{font-size:14px;font-style:italic;color:var(--ink-red);margin:14px 0 0;min-height:1.3em}
 .inkbtn{font-family:var(--util);font-size:12px;letter-spacing:.16em;text-transform:uppercase;background:var(--wax);color:var(--on-wax);border:0;padding:13px 22px;border-radius:2px;cursor:pointer;margin-top:8px}
@@ -211,6 +212,14 @@ body.editing .edit{display:none}
 @media (min-width:980px){body.editing .scene{padding-right:446px}body.editing .jump{left:calc(50% - 215px)}}
 @media (max-width:430px){.item.pkrow{grid-template-columns:1fr 1fr}.item.pkrow .link{grid-column:1/-1;justify-self:end}.tools{gap:6px 12px}}
 .progress{position:fixed;left:0;top:0;height:3px;width:100%;background:var(--brass);transform-origin:0 50%;transform:scaleX(0);z-index:15}
+.pin{display:flex;flex-direction:column;align-items:center;gap:10px}
+.pin label{font-family:var(--util);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--on-ground-soft)}
+.pinrow{display:flex;gap:8px;align-items:center}
+.pin input{font:500 22px/1 var(--display);letter-spacing:.35em;text-align:center;width:9ch;min-height:42px;box-sizing:border-box;padding:8px 6px 8px 14px;background:transparent;color:var(--on-ground);border:1px solid var(--on-ground-soft);border-radius:999px}
+.pin input:focus{outline:2px solid var(--brass);outline-offset:2px}
+.pin .btn:disabled{opacity:.6;cursor:wait}
+.pinerr{margin:0;font-style:italic;font-size:14px;color:#f0b9b0;text-align:center}
+.pinerr:empty{display:none}
 .jump{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:15;background:var(--wax);border-color:var(--wax);color:var(--on-wax);box-shadow:0 10px 24px -8px var(--ground-lo)}
 
 /* editor */
@@ -299,6 +308,11 @@ body.editing .edit{display:none}
 
   <div class="controls">
     <p class="status" id="status" aria-live="polite"></p>
+    <form class="pin" id="pinForm" hidden>
+      <label for="pinIn">Enter the PIN you were sent</label>
+      <div class="pinrow"><input type="password" id="pinIn" inputmode="numeric" autocomplete="one-time-code" maxlength="8"><button type="submit" class="btn solid" id="pinGo">Open</button></div>
+      <p class="pinerr" id="pinErr" role="alert"></p>
+    </form>
     <section class="receipt" id="receipt" hidden>
       <p class="caps">Signed and sealed</p>
       <h2>Thank you</h2>
@@ -328,6 +342,15 @@ body.editing .edit{display:none}
     <button type="button" class="link" id="hClear">Clear</button>
     <button type="button" class="link" id="hSave">Use this signature</button>
   </div>
+  <h3>Send it</h3>
+  <p class="hint">This makes a link that carries the whole proposal. Make a new link after any change. Links you already sent keep the version they were made with.</p>
+  <label class="field"><span>Your page's web address</span><input type="text" id="sBase" placeholder="https://you.github.io/Sealed-Proposal/" autocomplete="off"></label>
+  <label class="field"><span>PIN (optional, 4 to 8 digits)</span><input type="text" id="sPin" inputmode="numeric" maxlength="8" autocomplete="off"></label>
+  <p class="hint">With a PIN, the letter is locked inside the link and opens only with it. Send the PIN separately, for example by SMS when the link goes by email.</p>
+  <div class="tools"><button type="button" class="inkbtn dark" id="sMake">Create client link</button><button type="button" class="link" id="sGen">Make a PIN for me</button></div>
+  <label class="field" id="sOutWrap" hidden><span>Client link</span><textarea id="sOut" readonly rows="3"></textarea></label>
+  <div class="tools" id="sOutTools" hidden><button type="button" class="link" id="sCopy">Copy link</button><a class="link" id="sTry" target="_blank" rel="noopener">Open it as the client</a></div>
+  <p class="err" id="sErr" role="alert"></p>
   <p class="hint" style="margin-top:28px"><button type="button" class="link" id="edReset">Start again from the example</button></p>
 </aside>
 
@@ -352,10 +375,13 @@ const DEF={to:'Oak & Vine',from:'Northlight Studio',title:'Website & Booking Pla
  closing:'Half of the fee is due on acceptance and the balance on launch. This proposal is valid for fourteen days.\nWe would love to build this with you.',
  addons:[{n:'Three extra pages',p:'R3 500'},{n:'Professional photo shoot',p:'R4 800'},{n:'Google Ads setup',p:'R2 900'},{n:'Hosting and care plan',p:'R450 per month'}],
  signName:'Northlight',sealImg:'',nameFont:'delafield',envType:'classic',liner:'dots',seal:'',envColor:'#dfe6e1',sealColor:'#7c1f2d',linerColor:'#23463a',email:''};
-let P=Object.assign({},JSON.parse(JSON.stringify(DEF)),store.get('proposal')||{});
-let fromLink='';try{fromLink=decodeURIComponent(location.hash.slice(1)).replace(/[-_.~]/g,' ').trim().slice(0,30)}catch(e){}
+/* a client link is #p=<public>.<letter> (open) or #k=<public>.<letter> (letter encrypted with a PIN) */
+const H=location.hash.slice(1),CM=/^[pk]=[\w-]+\.[\w-]+$/.test(H)?H[0]:'';
+const SK=CM?'sealed:'+[...H].reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7).toString(36):'sealed';
+let P=Object.assign({},JSON.parse(JSON.stringify(DEF)),CM?{}:store.get('proposal')||{});
+let fromLink='';if(!CM)try{fromLink=decodeURIComponent(H).replace(/[-_.~]/g,' ').trim().slice(0,30)}catch(e){}
 if(fromLink)P.to=fromLink;
-const save=()=>store.set('proposal',P);
+const save=()=>{if(!CM)store.set('proposal',P)};
 
 function paras(box,text){box.replaceChildren();String(text||'').split(/\n+/).filter(s=>s.trim()).forEach(t=>box.appendChild(el('p',null,t)))}
 let io=null;
@@ -395,7 +421,7 @@ const hex=(v,d)=>/^#[0-9a-f]{6}$/i.test(v||'')?v:d,lum=h=>{const n=parseInt(h.sl
 function theme(){const R=document.documentElement.style,e=hex(P.envColor,DEF.envColor),w=hex(P.sealColor,DEF.sealColor);
   R.setProperty('--paper',e);R.setProperty('--on-paper',lum(e)>.55?'#1c2430':'#f8f6f0');R.setProperty('--wax',w);R.setProperty('--on-wax',lum(w)>.6?'#1c2430':'#f8f6f0');R.setProperty('--liner',hex(P.linerColor,DEF.linerColor))}
 let dl=null;
-function doneUI(){const L=typeof locked!=='undefined'&&locked;$('receipt').hidden=!L;scene.classList.toggle('is-locked',!!L);if(!L)return;$('rcText').textContent=lockMsg(L);$('pdfBtn').hidden=!dl;$('mailLine').hidden=!P.email.trim();$('mailAddr').textContent=P.email.trim()}
+function doneUI(){const L=typeof locked!=='undefined'&&locked;$('receipt').hidden=!L;scene.classList.toggle('is-locked',!!L);if(!L)return;$('rcText').textContent=lockMsg(L);$('mailLine').hidden=!P.email.trim();$('mailAddr').textContent=P.email.trim()}
 function calc(){const num=t=>{const m=String(t||'').replace(/[\s,]/g,'').match(/\d+(\.\d+)?/);return m?+m[0]:NaN},monthly=t=>/month|\/m|\bp\.?m\b/i.test(t||'');
   const all=P.packages.concat(P.addons||[]).map(x=>x.p||'').find(x=>/\d/.test(x))||'R',cur=(all.match(/^\D*/)[0].trim())||'R',fmt=n=>cur+Math.round(n).toLocaleString('en-US').replace(/,/g,' ');
   const t=document.querySelector('input[name=tier]:checked'),pk=t&&P.packages.find(p=>p.n===t.value),base=pk?num(pk.p):0;let once=0,month=0;const picked=[];
@@ -424,7 +450,7 @@ function Pad(svg){const s={strokes:[],color:'#1c2430'};let cur=null,e2=null;
   s.undo=()=>{s.strokes.pop();draw(svg,s.strokes)};s.clear=()=>{s.strokes=[];draw(svg,[])};s.load=a=>{s.strokes=a.slice();draw(svg,s.strokes)};return s}
 
 /* ---------- sender signature ---------- */
-let hostStrokes=store.get('hostSig')||[];
+let hostStrokes=CM?[]:store.get('hostSig')||[];
 function writeHost(){const d=$('sigDefault');
   if(hostStrokes.length){d.hidden=true;draw($('hostSig'),hostStrokes,true)}
   else{d.hidden=false;$('hostSig').replaceChildren();d.classList.remove('write');d.getBoundingClientRect();d.classList.add('write')}}
@@ -433,10 +459,12 @@ $('hUndo').addEventListener('click',hostPad.undo);$('hClear').addEventListener('
 $('hSave').addEventListener('click',e=>{hostStrokes=hostPad.strokes.slice();store.set('hostSig',hostStrokes);writeHost();e.target.textContent=hostStrokes.length?'Saved':'Removed';setTimeout(()=>e.target.textContent='Use this signature',1500)});
 
 /* ---------- stages ---------- */
-const status=$('status'),seal=$('seal');let timers=[];var locked=store.get('sealed');
+const status=$('status'),seal=$('seal');let timers=[];var locked=store.get(SK);
 const lockMsg=r=>`${r.yes?'Accepted':'Changes requested'} by ${r.name}${r.second?' and '+r.second.name:''} on ${r.when}${r.yes&&r.tier?', '+r.tier+' package':''}.${r.yes&&r.total?' Total '+r.total+(r.totalNote?' '+r.totalNote:'')+'.':''} This proposal is sealed and cannot be signed again.`;
 function setStage(s){scene.dataset.stage=s;if(s==='leave'||s==='shown'||s==='closed')scene.classList.remove('burning');const shown=s==='shown';$('backBtn').hidden=!shown;if(shown){status.textContent='';scrollTo(0,0);watch()}onScroll()}
 function open(){if(scene.dataset.stage!=='closed'||seal.classList.contains('broken'))return;if(locked){status.textContent='This proposal has been signed, so the seal stays closed.';return}
+  if(badLink){status.textContent='This link looks incomplete. Ask for it to be sent again.';return}
+  if(!unlocked)return unlockThen(open);
   seal.classList.add('broken');status.textContent='';
   if(reduce){setStage('shown');return}
   scene.classList.add('burning');
@@ -476,8 +504,8 @@ $('rsvp').addEventListener('submit',e=>{e.preventDefault();const name=$('guestNa
   if(has2&&(!n2||!gPad2.strokes.length)){err.textContent='Add the second signer\'s name and signature, or remove the second signer.';return}
   err.textContent='';const t=document.querySelector('input[name=tier]:checked');
   const c=calc();locked={name,addons:c.picked,total:c.total,totalNote:c.note,yes:$('attYes').checked,tier:t?t.value:'',note:$('note').value.trim(),strokes:typed.hidden?gPad.strokes:[],typed:typed.hidden?'':typed.value.trim(),second:has2?{name:n2,strokes:gPad2.strokes}:null,when:new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})};
-  store.set('sealed',locked);$('resetBtn').hidden=false;close();doneUI()});
-$('resetBtn').addEventListener('click',()=>{locked=null;store.set('sealed',null);$('resetBtn').hidden=true;gPad.clear();two(false);typed.value='';status.textContent='Press the seal to open it.';doneUI()});
+  store.set(SK,locked);$('resetBtn').hidden=!!CM;close();doneUI()});
+$('resetBtn').addEventListener('click',()=>{locked=null;store.set(SK,null);$('resetBtn').hidden=true;gPad.clear();two(false);typed.value='';status.textContent='Press the seal to open it.';doneUI()});
 
 /* ---------- signed PDF ---------- */
 function makePdf(){const doc=new window.jspdf.jsPDF({unit:'pt',format:'a4'}),W=595,H=842,M=64;let y=M+10;
@@ -506,11 +534,13 @@ function makePdf(){const doc=new window.jspdf.jsPDF({unit:'pt',format:'a4'}),W=5
   if(locked.second){y+=12;ink(locked.second.strokes,.6);doc.setDrawColor(28,36,48);doc.setLineWidth(.6);need(20);doc.line(M,y,M+180,y);y+=14;text('Signature of '+locked.second.name,9)}
   return doc.output('blob')}
 if(window.claude&&window.claude.use)window.claude.use('downloads').then(d=>{dl=d;doneUI()}).catch(()=>{});
-$('pdfBtn').addEventListener('click',async()=>{if(!locked||!dl)return;
+async function savePdf(){if(!locked)return;
   if(!window.jspdf){status.textContent='The PDF builder did not load. Check your connection and reload the page.';return}
-  try{await dl.save({filename:('Proposal '+P.to+' signed').replace(/[^\w &-]+/g,'').trim()+'.pdf',data:makePdf()});
-    status.textContent='PDF saved.'+(P.email.trim()?' Email it to the address below.':'')}
-  catch(e){if(e&&e.code==='declined')return;status.textContent=e&&e.code==='rate_limited'?'A save is already waiting. Finish that one first.':'This view could not save the file.'}});
+  const filename=('Proposal '+P.to+' signed').replace(/[^\w &-]+/g,'').trim()+'.pdf',saved='PDF saved.'+(P.email.trim()?' Email it to the address below.':'');
+  if(!dl){const a=el('a');a.href=URL.createObjectURL(makePdf());a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);status.textContent=saved;return}
+  try{await dl.save({filename,data:makePdf()});status.textContent=saved}
+  catch(e){if(e&&e.code==='declined')return;status.textContent=e&&e.code==='rate_limited'?'A save is already waiting. Finish that one first.':'This view could not save the file.'}}
+$('pdfBtn').addEventListener('click',()=>unlocked?savePdf():unlockThen(savePdf));
 $('copyMail').addEventListener('click',e=>{const done=()=>{e.target.textContent='Copied';setTimeout(()=>e.target.textContent='Copy address',1500)};
   const pick=()=>{const g=getSelection(),rg=document.createRange();rg.selectNodeContents($('mailAddr'));g.removeAllRanges();g.addRange(rg)};
   try{navigator.clipboard.writeText(P.email.trim()).then(done).catch(pick)}catch(x){pick()}});
@@ -562,7 +592,52 @@ $('edDone').addEventListener('click',()=>{$('editor').hidden=true;document.body.
 $('edReset').addEventListener('click',()=>{P=JSON.parse(JSON.stringify(DEF));if(fromLink)P.to=fromLink;save();render();build()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('editor').hidden){$('editor').hidden=true;document.body.classList.remove('editing');onScroll()}});
 
-render();status.textContent=locked?'':'Press the seal to open it.';$('resetBtn').hidden=!locked;onScroll();
+/* ---------- client links and PIN ---------- */
+const PUB=['to','nameFont','envType','liner','envColor','sealColor','linerColor','seal','email'];
+const b64=u=>{let s='';for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+const unb64=s=>{const b=atob(s.replace(/-/g,'+').replace(/_/g,'/')),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u};
+const cat=(...a)=>{const o=new Uint8Array(a.reduce((s,x)=>s+x.length,0));let i=0;a.forEach(x=>{o.set(x,i);i+=x.length});return o};
+const pipe=async(u,T)=>new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(new T('deflate-raw'))).arrayBuffer());
+const zip=async o=>{const u=new TextEncoder().encode(JSON.stringify(o));return window.CompressionStream?cat([1],await pipe(u,CompressionStream)):cat([0],u)};
+const unzip=async u=>JSON.parse(new TextDecoder().decode(u[0]?await pipe(u.subarray(1),DecompressionStream):u.subarray(1)));
+const keyFor=async(pin,salt)=>crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},
+  await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveKey']),{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+async function makeLink(pin){const pub={},priv={sig:hostStrokes};Object.keys(DEF).forEach(k=>(PUB.includes(k)?pub:priv)[k]=P[k]);
+  let body=await zip(priv);
+  if(pin){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    body=cat(salt,iv,new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await keyFor(pin,salt),body)))}
+  return(pin?'k=':'p=')+b64(await zip(pub))+'.'+b64(body)}
+const part=i=>unb64(H.slice(2).split('.')[i]);
+async function readLetter(pin){let body=part(1);
+  if(CM==='k'){const salt=body.subarray(0,16),iv=body.subarray(16,28);body=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv},await keyFor(pin,salt),body.subarray(28)))}
+  const d=await unzip(body);hostStrokes=Array.isArray(d.sig)?d.sig:[];merge(d)}
+const merge=d=>Object.keys(DEF).forEach(k=>{if(d&&k in d&&typeof d[k]===typeof DEF[k]&&Array.isArray(d[k])===Array.isArray(DEF[k]))P[k]=d[k]});
+let unlocked=CM!=='k',badLink=false,pending=null,tries=0;
+function unlockThen(fn){pending=fn;$('pinForm').hidden=false;status.textContent='';$('pinIn').focus()}
+$('pinForm').addEventListener('submit',async e=>{e.preventDefault();const pin=$('pinIn').value.trim(),go=$('pinGo'),er=$('pinErr');if(!pin||go.disabled)return;
+  if(!(window.crypto&&crypto.subtle)){er.textContent='Open this link from its https address to unlock it.';return}
+  go.disabled=true;go.textContent='Checking';er.textContent='';
+  try{await readLetter(pin)}catch(x){tries++;er.textContent='That PIN does not match, or the link was cut short. Check both messages.';$('pinIn').select();
+    setTimeout(()=>{go.disabled=false;go.textContent='Open'},Math.min(tries,10)*800);return}
+  unlocked=true;go.disabled=false;go.textContent='Open';$('pinForm').hidden=true;render();const f=pending;pending=null;if(f)f()});
+
+const sBase=$('sBase');sBase.value=store.get('base')||(/^https?:$/.test(location.protocol)&&window.top===window.self?location.origin+location.pathname:'');
+sBase.addEventListener('input',()=>store.set('base',sBase.value.trim()));
+$('sGen').addEventListener('click',()=>{$('sPin').value=String(crypto.getRandomValues(new Uint32Array(1))[0]%1e6).padStart(6,'0')});
+$('sMake').addEventListener('click',async()=>{const er=$('sErr'),pin=$('sPin').value.trim(),base=sBase.value.trim().replace(/#.*$/,'');er.textContent='';
+  if(!/^https?:\/\/\S+$/i.test(base)){er.textContent='Add the web address where this page is published, starting with https://.';return}
+  if(pin&&!/^\d{4,8}$/.test(pin)){er.textContent='Use 4 to 8 digits for the PIN.';return}
+  if(pin&&!(window.crypto&&crypto.subtle)){er.textContent='Locking with a PIN needs this page opened from an https address.';return}
+  try{const url=base+'#'+await makeLink(pin);$('sOut').value=url;$('sTry').href=url;$('sOutWrap').hidden=$('sOutTools').hidden=false;
+    if(url.length>8000)er.textContent=`This link is ${url.length.toLocaleString()} characters long, mostly from the logo. Some apps cut long links, so a smaller logo or none is safer.`}
+  catch(x){er.textContent='This browser could not make the link. Try a current Chrome, Safari, Edge or Firefox.'}});
+$('sCopy').addEventListener('click',e=>{const done=()=>{e.target.textContent='Copied';setTimeout(()=>e.target.textContent='Copy link',1500)},pick=()=>$('sOut').select();
+  try{navigator.clipboard.writeText($('sOut').value).then(done).catch(pick)}catch(x){pick()}});
+
+(async()=>{
+  if(CM){$('editBtn').hidden=true;try{merge(await unzip(part(0)));if(CM==='p')await readLetter()}catch(e){badLink=true}}
+  render();status.textContent=badLink?'This link looks incomplete. Ask for it to be sent again.':locked?'':CM==='k'?'Press the seal, then enter the PIN you were sent.':'Press the seal to open it.';
+  $('resetBtn').hidden=!locked||!!CM;onScroll()})();
 })();
 </script>
 
