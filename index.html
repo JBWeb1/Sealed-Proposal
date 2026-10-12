@@ -170,6 +170,7 @@ a.link{display:inline-flex;align-items:center;box-sizing:border-box}
 .link:focus-visible,.inkbtn:focus-visible,.swatch:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
 .err{font-size:14px;font-style:italic;color:var(--ink-red);margin:14px 0 0;min-height:1.3em}
 .inkbtn{font-family:var(--util);font-size:12px;letter-spacing:.16em;text-transform:uppercase;background:var(--wax);color:var(--on-wax);border:0;padding:13px 22px;border-radius:2px;cursor:pointer;margin-top:8px}
+a.inkbtn{display:inline-block;text-decoration:none}
 .inkbtn.dark{background:var(--ink);color:var(--card)}
 .field input[type=color]{width:100%;height:38px;padding:2px;border:1px solid var(--card-line);border-radius:2px;background:transparent;cursor:pointer}
 .types{grid-template-columns:repeat(4,1fr)}
@@ -202,12 +203,28 @@ a.link{display:inline-flex;align-items:center;box-sizing:border-box}
 .receipt p{margin:0;font-size:15.5px;line-height:1.5;max-width:34ch;text-wrap:balance}
 .receipt .mail{font-size:14.5px;color:var(--ink-soft)}
 .receipt .mail b{color:var(--ink)}
-.editor .field input[type=text],.editor .field textarea{border:1px solid var(--card-line);border-radius:3px;padding:9px 11px;background:color-mix(in srgb,var(--card) 55%,white)}
+.editor .field input[type=text],.editor .field input[type=password],.editor .field textarea{border:1px solid var(--card-line);border-radius:3px;padding:9px 11px;background:color-mix(in srgb,var(--card) 55%,white)}
 .editor .field input[type=file]{font:400 14px var(--body);color:var(--ink-soft);max-width:100%}
 .editor h3{padding-top:22px;border-top:1px solid var(--card-line)}
-.editor #edBody>h3:first-child{border-top:0;padding-top:0;margin-top:18px}
-.edit{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:16px;z-index:14;background:color-mix(in srgb,var(--ground) 82%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font-size:11px;padding:9px 14px;min-height:38px}
-body.editing .edit{display:none}
+.editor #edBody>h3:first-child,.admin #adBody>h3:first-child{border-top:0;padding-top:0;margin-top:18px}
+.adminbar{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:16px;z-index:14;display:flex;gap:8px}
+.adminbar .btn{background:color-mix(in srgb,var(--ground) 82%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font-size:11px;padding:9px 14px;min-height:38px}
+body.editing .adminbar,body.adminning .adminbar{display:none}
+.admin{width:min(100%,560px);z-index:31}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px;margin-top:12px}
+.stat{border:1px solid var(--card-line);border-radius:3px;padding:10px 12px}
+.stat b{display:block;font:500 26px/1.15 var(--display);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stat span{font:400 10.5px var(--util);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+.prop.on{border-color:var(--ink)}
+.prop h4{font:italic 400 21px/1.2 var(--display);margin:12px 0 2px;overflow-wrap:anywhere}
+.prop .meta,.linkline{font:400 12.5px/1.5 var(--util);color:var(--ink-soft);margin:2px 0 0}
+.linkline b{font-family:var(--display);font-weight:500;color:var(--ink);letter-spacing:.12em}
+.chip{display:inline-block;font:500 10px/1 var(--util);font-style:normal;letter-spacing:.12em;text-transform:uppercase;padding:4px 8px;border-radius:999px;border:1px solid currentColor;margin-left:8px;vertical-align:middle;white-space:nowrap}
+.chip.draft{color:var(--ink-soft)}.chip.sent{color:#8a6a2c}.chip.accepted{color:var(--ink-green)}.chip.changes{color:var(--ink-red)}
+.replynote{font-size:14.5px;line-height:1.45;margin:8px 0 0;padding:8px 10px;background:color-mix(in srgb,var(--card-line) 40%,transparent);border-radius:2px;overflow-wrap:anywhere}
+.editor select{font:400 13px var(--util);padding:8px 6px;border:1px solid var(--card-line);border-radius:3px;background:transparent;color:var(--ink);min-height:40px}
+.ok{font-size:14px;font-style:italic;color:var(--ink-green);margin:14px 0 0}
+.ok:empty{display:none}
 .controls .row:empty{display:none}
 @media (min-width:980px){body.editing .scene{padding-right:446px}body.editing .jump{left:calc(50% - 215px)}}
 @media (max-width:430px){.item.pkrow{grid-template-columns:1fr 1fr}.item.pkrow .link{grid-column:1/-1;justify-self:end}.tools{gap:6px 12px}}
@@ -319,9 +336,9 @@ body.editing .edit{display:none}
       <p id="rcText"></p>
       <button type="button" class="inkbtn" id="pdfBtn">Download signed PDF</button>
       <p class="mail" id="mailLine" hidden>Then email the PDF to <b id="mailAddr"></b> <button type="button" class="link" id="copyMail">Copy address</button></p>
+      <a class="inkbtn dark" id="replyMail" hidden>Write the reply email</a>
     </section>
     <div class="row">
-      <button type="button" class="btn edit" id="editBtn">Edit proposal</button>
       <button type="button" class="btn quiet" id="backBtn" hidden>Put it back in the envelope</button>
       <button type="button" class="btn quiet" id="resetBtn" hidden>Reset signing</button>
     </div>
@@ -329,6 +346,12 @@ body.editing .edit{display:none}
 </main>
 
 <button type="button" class="btn jump" id="jump" hidden>Go to reply</button>
+<div class="adminbar" id="adminbar"><button type="button" class="btn" id="editBtn" hidden>Edit proposal</button><button type="button" class="btn" id="adminBtn">Admin</button></div>
+
+<aside class="editor admin" id="admin" hidden aria-label="Admin">
+  <header><h2>Admin</h2><button type="button" class="inkbtn dark" id="adClose" style="margin:0">Close</button></header>
+  <div id="adBody"></div>
+</aside>
 
 <aside class="editor" id="editor" hidden aria-label="Proposal editor">
   <header><h2>Write your proposal</h2><button type="button" class="inkbtn dark" id="edDone" style="margin:0">Done</button></header>
@@ -378,10 +401,17 @@ const DEF={to:'Oak & Vine',from:'Northlight Studio',title:'Website & Booking Pla
 /* a client link is #p=<public>.<letter> (open) or #k=<public>.<letter> (letter encrypted with a PIN) */
 const H=location.hash.slice(1),CM=/^[pk]=[\w-]+\.[\w-]+$/.test(H)?H[0]:'';
 const SK=CM?'sealed:'+[...H].reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7).toString(36):'sealed';
-let P=Object.assign({},JSON.parse(JSON.stringify(DEF)),CM?{}:store.get('proposal')||{});
-let fromLink='';if(!CM)try{fromLink=decodeURIComponent(H).replace(/[-_.~]/g,' ').trim().slice(0,30)}catch(e){}
+/* admin keeps a book of proposals in this browser; P is the one being edited */
+const clone=o=>JSON.parse(JSON.stringify(o)),now=()=>Date.now(),rid=()=>Math.random().toString(36).slice(2,8)+now().toString(36);
+const entry=p=>({id:rid(),P:p||clone(DEF),status:'draft',made:now(),edited:now(),links:[],reply:null});
+let book=CM?[]:store.get('proposals');
+if(!CM&&!(Array.isArray(book)&&book.length)){book=[entry(store.get('proposal')||null)];store.set('proposals',book)}
+let cur=CM?null:book.find(b=>b.id===store.get('current'))||book[0];
+let P=Object.assign({},clone(DEF),CM?{}:cur.P);if(cur)cur.P=P;
+const persist=()=>store.set('proposals',book);
+let fromLink='';if(!CM&&H!=='admin')try{fromLink=decodeURIComponent(H).replace(/[-_.~]/g,' ').trim().slice(0,30)}catch(e){}
 if(fromLink)P.to=fromLink;
-const save=()=>{if(!CM)store.set('proposal',P)};
+const save=()=>{if(CM||!cur)return;cur.P=P;cur.edited=now();persist()};
 
 function paras(box,text){box.replaceChildren();String(text||'').split(/\n+/).filter(s=>s.trim()).forEach(t=>box.appendChild(el('p',null,t)))}
 let io=null;
@@ -421,7 +451,8 @@ const hex=(v,d)=>/^#[0-9a-f]{6}$/i.test(v||'')?v:d,lum=h=>{const n=parseInt(h.sl
 function theme(){const R=document.documentElement.style,e=hex(P.envColor,DEF.envColor),w=hex(P.sealColor,DEF.sealColor);
   R.setProperty('--paper',e);R.setProperty('--on-paper',lum(e)>.55?'#1c2430':'#f8f6f0');R.setProperty('--wax',w);R.setProperty('--on-wax',lum(w)>.6?'#1c2430':'#f8f6f0');R.setProperty('--liner',hex(P.linerColor,DEF.linerColor))}
 let dl=null;
-function doneUI(){const L=typeof locked!=='undefined'&&locked;$('receipt').hidden=!L;scene.classList.toggle('is-locked',!!L);if(!L)return;$('rcText').textContent=lockMsg(L);$('mailLine').hidden=!P.email.trim();$('mailAddr').textContent=P.email.trim()}
+function doneUI(){const L=typeof locked!=='undefined'&&locked;$('receipt').hidden=!L;scene.classList.toggle('is-locked',!!L);if(!L)return;$('rcText').textContent=lockMsg(L);$('mailLine').hidden=!P.email.trim();$('mailAddr').textContent=P.email.trim();
+  const rm=$('replyMail');rm.hidden=!(L.code&&P.email.trim());if(!rm.hidden)rm.href='mailto:'+encodeURIComponent(P.email.trim())+'?subject='+encodeURIComponent('Signed: '+(P.title||'proposal')+' for '+P.to)+'&body='+encodeURIComponent(lockMsg(L).replace(/ This proposal is sealed.*$/,'')+(L.note?'\nNote: '+L.note:'')+'\n\nPlease find the signed PDF attached.\n\nReply code (please leave this line in): '+L.code)}
 function calc(){const num=t=>{const m=String(t||'').replace(/[\s,]/g,'').match(/\d+(\.\d+)?/);return m?+m[0]:NaN},monthly=t=>/month|\/m|\bp\.?m\b/i.test(t||'');
   const all=P.packages.concat(P.addons||[]).map(x=>x.p||'').find(x=>/\d/.test(x))||'R',cur=(all.match(/^\D*/)[0].trim())||'R',fmt=n=>cur+Math.round(n).toLocaleString('en-US').replace(/,/g,' ');
   const t=document.querySelector('input[name=tier]:checked'),pk=t&&P.packages.find(p=>p.n===t.value),base=pk?num(pk.p):0;let once=0,month=0;const picked=[];
@@ -481,7 +512,7 @@ seal.addEventListener('click',open);$('pocket').addEventListener('click',open);$
 const jump=$('jump'),progress=$('progress');
 function onScroll(){const shown=scene.dataset.stage==='shown',se=document.scrollingElement||document.documentElement,max=se.scrollHeight-innerHeight;
   progress.style.transform=`scaleX(${shown&&max>0?Math.min(1,se.scrollTop/max):0})`;
-  jump.hidden=!shown||!$('editor').hidden||$('reply').getBoundingClientRect().top<innerHeight*.8}
+  jump.hidden=!shown||!$('editor').hidden||!$('admin').hidden||$('reply').getBoundingClientRect().top<innerHeight*.8}
 addEventListener('scroll',onScroll,{passive:true});addEventListener('resize',onScroll);
 jump.addEventListener('click',()=>$('reply').scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'}));
 
@@ -504,7 +535,9 @@ $('rsvp').addEventListener('submit',e=>{e.preventDefault();const name=$('guestNa
   if(has2&&(!n2||!gPad2.strokes.length)){err.textContent='Add the second signer\'s name and signature, or remove the second signer.';return}
   err.textContent='';const t=document.querySelector('input[name=tier]:checked');
   const c=calc();locked={name,addons:c.picked,total:c.total,totalNote:c.note,yes:$('attYes').checked,tier:t?t.value:'',note:$('note').value.trim(),strokes:typed.hidden?gPad.strokes:[],typed:typed.hidden?'':typed.value.trim(),second:has2?{name:n2,strokes:gPad2.strokes}:null,when:new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})};
-  store.set(SK,locked);$('resetBtn').hidden=!!CM;close();doneUI()});
+  store.set(SK,locked);$('resetBtn').hidden=!!CM;close();doneUI();
+  if(CM){const L=locked,r={i:clientId,y:L.yes,n:L.name,n2:L.second?L.second.name:'',t:L.tier,a:L.addons,tot:L.total,tn:L.totalNote,no:L.note,w:L.when};
+    zip(r).then(u=>{L.code='SPR1.'+b64(u);if(locked===L){store.set(SK,L);doneUI()}}).catch(()=>{})}});
 $('resetBtn').addEventListener('click',()=>{locked=null;store.set(SK,null);$('resetBtn').hidden=true;gPad.clear();two(false);typed.value='';status.textContent='Press the seal to open it.';doneUI()});
 
 /* ---------- signed PDF ---------- */
@@ -558,7 +591,7 @@ function build(){n=0;const B=$('edBody');B.replaceChildren();
   Object.keys(NF).forEach(k=>{const lab=el('label'),inp=el('input');inp.type='radio';inp.name='ed_nameFont';inp.id='ed_nf_'+k;inp.checked=(P.nameFont||'delafield')===k;
     inp.addEventListener('change',()=>{P.nameFont=k;save();render()});const sp=el('span');const nm=el('div',null,(P.to||'Name').slice(0,14));
     nm.style.cssText=`font-family:${NF[k][1]};font-style:${NF[k][2]};font-size:${NF[k][5]}px;letter-spacing:${NF[k][4]};line-height:1.15;max-width:100%;overflow-wrap:anywhere`;if(k==='caps')nm.style.textTransform='uppercase';
-    sp.appendChild(nm);sp.appendChild(el('em',null,NF[k][0]));lab.appendChild(inp);lab.appendChild(sp);fg.appendChild(lab)});ff.appendChild(fg);B.appendChild(ff);B.appendChild(key('From','from'));B.appendChild(key('Proposal title','title'));B.appendChild(key('Date line','date'));B.appendChild(key('Your email, for the signed PDF','email'));
+    sp.appendChild(nm);sp.appendChild(el('em',null,NF[k][0]));lab.appendChild(inp);lab.appendChild(sp);fg.appendChild(lab)});ff.appendChild(fg);B.appendChild(ff);B.appendChild(key('From','from'));B.appendChild(key('Proposal title','title'));B.appendChild(key('Date line','date'));B.appendChild(key('Your email, where clients send replies','email'));
   B.appendChild(el('h3',null,'Envelope and seal'));B.appendChild(key('Letters on the seal (up to 3)','seal'));
   const lf=el('label','field');lf.appendChild(el('span',null,'Logo on the seal (replaces the letters)'));const fi=el('input');fi.type='file';fi.accept='image/*';fi.id='edLogo';lf.appendChild(fi);B.appendChild(lf);
   fi.addEventListener('change',()=>{const f=fi.files&&fi.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=240;const k=Math.min(240/im.width,240/im.height),w=im.width*k,h=im.height*k;c.getContext('2d').drawImage(im,(240-w)/2,(240-h)/2,w,h);P.sealImg=c.toDataURL('image/png');save();render();build()};im.src=fr.result};fr.readAsDataURL(f)});
@@ -587,10 +620,10 @@ function build(){n=0;const B=$('edBody');B.replaceChildren();
   P.addons.forEach((p,i)=>{const it=el('div','item pkrow');it.appendChild(field('Name',()=>p.n,v=>p.n=v));it.appendChild(field('Price',()=>p.p,v=>p.p=v));it.appendChild(tool('Remove',()=>P.addons.splice(i,1)));B.appendChild(it)});
   const adda=el('div','tools');adda.appendChild(tool('Add an add-on',()=>P.addons.push({n:'New add-on',p:''})));B.appendChild(adda);
   B.appendChild(el('h3',null,'Closing'));B.appendChild(key('Closing paragraphs','closing',true));B.appendChild(key('Signature name (used until you draw one)','signName'))}
-$('editBtn').addEventListener('click',()=>{timers.forEach(clearTimeout);build();hostPad.load(hostStrokes);$('editor').hidden=false;document.body.classList.add('editing');if(scene.dataset.stage!=='shown')setStage('shown');else watch();onScroll()});
+$('editBtn').addEventListener('click',()=>{if(!admin)return;closeAdmin();timers.forEach(clearTimeout);build();hostPad.load(hostStrokes);$('editor').hidden=false;document.body.classList.add('editing');if(scene.dataset.stage!=='shown')setStage('shown');else watch();onScroll()});
 $('edDone').addEventListener('click',()=>{$('editor').hidden=true;document.body.classList.remove('editing');onScroll()});
-$('edReset').addEventListener('click',()=>{P=JSON.parse(JSON.stringify(DEF));if(fromLink)P.to=fromLink;save();render();build()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('editor').hidden){$('editor').hidden=true;document.body.classList.remove('editing');onScroll()}});
+$('edReset').addEventListener('click',()=>{P=clone(DEF);if(fromLink)P.to=fromLink;save();render();build()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('admin').hidden)return closeAdmin();if(!$('editor').hidden){$('editor').hidden=true;document.body.classList.remove('editing');onScroll()}});
 
 /* ---------- client links and PIN ---------- */
 const PUB=['to','nameFont','envType','liner','envColor','sealColor','linerColor','seal','email'];
@@ -602,7 +635,7 @@ const zip=async o=>{const u=new TextEncoder().encode(JSON.stringify(o));return w
 const unzip=async u=>JSON.parse(new TextDecoder().decode(u[0]?await pipe(u.subarray(1),DecompressionStream):u.subarray(1)));
 const keyFor=async(pin,salt)=>crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},
   await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveKey']),{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
-async function makeLink(pin){const pub={},priv={sig:hostStrokes};Object.keys(DEF).forEach(k=>(PUB.includes(k)?pub:priv)[k]=P[k]);
+async function makeLink(pin){const pub={_i:cur.id},priv={sig:hostStrokes};Object.keys(DEF).forEach(k=>(PUB.includes(k)?pub:priv)[k]=P[k]);
   let body=await zip(priv);
   if(pin){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
     body=cat(salt,iv,new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await keyFor(pin,salt),body)))}
@@ -628,16 +661,115 @@ $('sMake').addEventListener('click',async()=>{const er=$('sErr'),pin=$('sPin').v
   if(!/^https?:\/\/\S+$/i.test(base)){er.textContent='Add the web address where this page is published, starting with https://.';return}
   if(pin&&!/^\d{4,8}$/.test(pin)){er.textContent='Use 4 to 8 digits for the PIN.';return}
   if(pin&&!(window.crypto&&crypto.subtle)){er.textContent='Locking with a PIN needs this page opened from an https address.';return}
-  try{const url=base+'#'+await makeLink(pin);$('sOut').value=url;$('sTry').href=url;$('sOutWrap').hidden=$('sOutTools').hidden=false;
+  try{const url=base+'#'+await makeLink(pin);cur.links.unshift({url,pin,at:now()});cur.links.length=Math.min(cur.links.length,10);if(cur.status==='draft')cur.status='sent';persist();$('sOut').value=url;$('sTry').href=url;$('sOutWrap').hidden=$('sOutTools').hidden=false;
     if(url.length>8000)er.textContent=`This link is ${url.length.toLocaleString()} characters long, mostly from the logo. Some apps cut long links, so a smaller logo or none is safer.`}
   catch(x){er.textContent='This browser could not make the link. Try a current Chrome, Safari, Edge or Firefox.'}});
 $('sCopy').addEventListener('click',e=>{const done=()=>{e.target.textContent='Copied';setTimeout(()=>e.target.textContent='Copy link',1500)},pick=()=>$('sOut').select();
   try{navigator.clipboard.writeText($('sOut').value).then(done).catch(pick)}catch(x){pick()}});
 
+/* ---------- admin ---------- */
+let clientId='';
+const ss={get(k){try{return sessionStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}};
+let admin=!CM&&!!store.get('admPass')&&ss.get('adm')==='1';
+const passHash=async(p,s)=>b64(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(s),iterations:150000,hash:'SHA-256'},
+  await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']),256)));
+const STATUS={draft:'Draft',sent:'Sent',accepted:'Accepted',changes:'Changes requested'};
+const day=t=>new Date(t).toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'});
+const replyText=r=>`${r.y?'Accepted':'Changes requested'} by ${r.n}${r.n2?' and '+r.n2:''} on ${r.w}${r.y&&r.t?', '+r.t+' package':''}.${r.a&&r.a.length?' Extras: '+r.a.join(', ')+'.':''}${r.y&&r.tot?' Total '+r.tot+(r.tn?' '+r.tn:'')+'.':''}${r.no?' Note: “'+r.no+'”':''}`;
+function adminUI(){if(CM)return;$('editBtn').hidden=!admin;if(!admin&&!$('editor').hidden){$('editor').hidden=true;document.body.classList.remove('editing')}}
+function openAdmin(){if(CM)return;$('editor').hidden=true;document.body.classList.remove('editing');buildAdmin();$('admin').hidden=false;document.body.classList.add('adminning');onScroll()}
+function closeAdmin(){$('admin').hidden=true;document.body.classList.remove('adminning');onScroll()}
+$('adminBtn').addEventListener('click',openAdmin);$('adClose').addEventListener('click',closeAdmin);
+function switchTo(id){const b=book.find(x=>x.id===id);if(!b)return;cur=b;store.set('current',id);P=Object.assign(clone(DEF),b.P);b.P=P;render()}
+const btn=(text,fn,cls)=>{const b=el('button',cls||'link',text);b.type='button';b.addEventListener('click',fn);return b};
+const input=(label,type,id)=>{const l=el('label','field');l.appendChild(el('span',null,label));const i=el('input');i.type=type;i.id=id;i.autocomplete='off';l.appendChild(i);return l};
+function saveFile(name,blob){if(dl)return dl.save({filename:name,data:blob}).catch(()=>{});const a=el('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+
+function buildAdmin(){const B=$('adBody');B.replaceChildren();
+  if(!admin){const has=store.get('admPass'),f=el('form');
+    f.appendChild(el('p','hint',has?'Enter your admin passcode to manage proposals in this browser.':'Choose an admin passcode. You need it to write proposals, make links and see replies in this browser.'));
+    f.appendChild(input(has?'Passcode':'New passcode','password','adPass'));if(!has)f.appendChild(input('Type it again','password','adPass2'));
+    const er=el('p','err');er.setAttribute('role','alert');const go=el('button','inkbtn',has?'Unlock':'Set passcode');go.type='submit';f.appendChild(er);f.appendChild(go);B.appendChild(f);
+    f.addEventListener('submit',async e=>{e.preventDefault();const p=$('adPass').value;er.textContent='';
+      if(!(window.crypto&&crypto.subtle)){er.textContent='Open this page from its https address to use admin.';return}
+      go.disabled=true;try{
+        if(!has){if(p.length<4){er.textContent='Use at least 4 characters.';return}if(p!==$('adPass2').value){er.textContent='The two passcodes do not match.';return}
+          const s=rid();store.set('admPass',{s,h:await passHash(p,s)})}
+        else if(await passHash(p,has.s)!==has.h){er.textContent='That passcode is not right.';$('adPass').select();return}
+        admin=true;ss.set('adm','1');adminUI();buildAdmin()}finally{go.disabled=false}});
+    setTimeout(()=>$('adPass').focus(),50);return}
+
+  /* overview */
+  const n=s=>book.filter(b=>b.status===s).length,acc=book.filter(b=>b.status==='accepted'&&b.reply&&b.reply.tot);
+  const val=acc.reduce((s,b)=>{const m=String(b.reply.tot).replace(/[\s,]/g,'').match(/\d+(\.\d+)?/);return m?s+ +m[0]:s},0);
+  const cur$=(acc[0]&&String(acc[0].reply.tot).match(/^\D*/)[0].trim())||'R';
+  B.appendChild(el('h3',null,'Overview'));const st=el('div','stats');
+  [['Proposals',book.length],['Awaiting reply',n('sent')],['Accepted',n('accepted')],['Changes asked',n('changes')]].concat(val?[['Accepted value',cur$+Math.round(val).toLocaleString('en-US').replace(/,/g,' ')]]:[])
+    .forEach(([k,v])=>{const d=el('div','stat');d.appendChild(el('b',null,String(v)));d.appendChild(el('span',null,k));st.appendChild(d)});B.appendChild(st);
+
+  /* proposals */
+  B.appendChild(el('h3',null,'Proposals'));
+  const top=el('div','tools');top.style.justifyContent='flex-start';
+  top.appendChild(btn('New proposal',()=>{const b=entry();book.unshift(b);persist();switchTo(b.id);closeAdmin();$('editBtn').click()},'inkbtn dark'));B.appendChild(top);
+  [...book].sort((a,b)=>b.edited-a.edited).forEach(b=>{const it=el('div','item prop'+(b===cur?' on':''));
+    const h=el('h4',null,b.P.to||'Untitled');h.appendChild(el('span','chip '+b.status,STATUS[b.status]||b.status));it.appendChild(h);
+    it.appendChild(el('p','meta',[b.P.title,(b===cur?'open now · ':'')+'edited '+day(b.edited)].filter(Boolean).join(' · ')));
+    const lk=b.links&&b.links[0];if(lk){const p=el('p','linkline','Last link '+day(lk.at)+' · ');if(lk.pin){p.appendChild(document.createTextNode('PIN '));p.appendChild(el('b',null,lk.pin))}else p.appendChild(document.createTextNode('no PIN'));it.appendChild(p)}
+    if(b.reply)it.appendChild(el('p','replynote',replyText(b.reply)));
+    const t=el('div','tools');t.style.justifyContent='flex-start';
+    t.appendChild(btn('Edit',()=>{switchTo(b.id);closeAdmin();$('editBtn').click()}));
+    if(b!==cur)t.appendChild(btn('Preview',()=>{switchTo(b.id);closeAdmin();close()}));
+    if(lk)t.appendChild(btn('Copy link',e=>{const done=()=>{e.target.textContent='Copied';setTimeout(()=>e.target.textContent='Copy link',1500)};try{navigator.clipboard.writeText(lk.url).then(done).catch(()=>prompt('Copy this link',lk.url))}catch(x){prompt('Copy this link',lk.url)}}));
+    t.appendChild(btn('Duplicate',()=>{const c=entry(clone(b.P));book.unshift(c);persist();buildAdmin()}));
+    const sel=el('select');sel.setAttribute('aria-label','Status for '+(b.P.to||'proposal'));Object.keys(STATUS).forEach(k=>{const o=el('option',null,STATUS[k]);o.value=k;o.selected=b.status===k;sel.appendChild(o)});
+    sel.addEventListener('change',()=>{b.status=sel.value;persist();buildAdmin()});t.appendChild(sel);
+    t.appendChild(btn('Delete',()=>{if(!confirm(`Delete the proposal for ${b.P.to||'this client'}? Links you sent keep working, but you lose the draft and its record here.`))return;
+      book.splice(book.indexOf(b),1);if(!book.length)book.push(entry());persist();if(b===cur)switchTo(book[0].id);buildAdmin()}));
+    it.appendChild(t);B.appendChild(it)});
+
+  /* replies */
+  B.appendChild(el('h3',null,'Record a reply'));
+  B.appendChild(el('p','hint','When a client signs, their reply email includes a reply code. Paste the email, or just the code, to mark the proposal accepted or changed.'));
+  const rl=el('label','field');rl.appendChild(el('span',null,'Reply email or code'));const ta=el('textarea');ta.id='adReply';ta.rows=3;rl.appendChild(ta);B.appendChild(rl);
+  const rer=el('p','err'),rok=el('p','ok');rer.setAttribute('role','alert');
+  const rt=el('div','tools');rt.style.justifyContent='flex-start';rt.appendChild(btn('Record reply',async()=>{rer.textContent=rok.textContent='';const m=ta.value.replace(/\s+/g,'').match(/SPR1\.([\w-]+)/);
+    if(!m){rer.textContent='No reply code found. Paste the whole email from the client.';return}
+    let r;try{r=await unzip(unb64(m[1]))}catch(e){rer.textContent='That reply code is damaged. Ask the client to send the email again.';return}
+    const b=book.find(x=>x.id===r.i);if(!b){rer.textContent='This reply is for a proposal that is not in this browser. Restore your backup first.';return}
+    b.reply=r;b.status=r.y?'accepted':'changes';persist();buildAdmin();const ok=$('adBody').querySelector('.ok');if(ok)ok.textContent='Recorded for '+(b.P.to||'the client')+': '+(r.y?'accepted.':'changes requested.')},'inkbtn dark'));
+  B.appendChild(rt);B.appendChild(rer);B.appendChild(rok);
+
+  /* backup */
+  B.appendChild(el('h3',null,'Backup'));
+  B.appendChild(el('p','hint','Everything here lives only in this browser. Download a backup now and then, and restore it to move to another computer.'));
+  const bt=el('div','tools');bt.style.justifyContent='flex-start';
+  bt.appendChild(btn('Download backup',()=>saveFile('sealed-proposals-'+new Date().toISOString().slice(0,10)+'.json',new Blob([JSON.stringify({v:1,proposals:book,hostSig:hostStrokes,base:store.get('base')||'',current:cur.id},null,1)],{type:'application/json'}))));
+  const fi=el('input');fi.type='file';fi.accept='.json,application/json';fi.hidden=true;fi.id='adRestore';
+  bt.appendChild(btn('Restore from backup',()=>fi.click()));bt.appendChild(fi);B.appendChild(bt);const ber=el('p','err');ber.setAttribute('role','alert');B.appendChild(ber);
+  fi.addEventListener('change',()=>{const f=fi.files&&fi.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{let d;try{d=JSON.parse(fr.result)}catch(e){}
+    const ok=d&&Array.isArray(d.proposals)&&d.proposals.length&&d.proposals.every(b=>b&&typeof b.id==='string'&&b.P&&typeof b.P==='object');
+    if(!ok){ber.textContent='That file is not a Sealed Proposal backup.';fi.value='';return}
+    if(!confirm(`Replace the ${book.length} proposal${book.length===1?'':'s'} in this browser with the ${d.proposals.length} in the backup?`)){fi.value='';return}
+    book=d.proposals.map(b=>Object.assign(entry(),b,{links:Array.isArray(b.links)?b.links:[],status:STATUS[b.status]?b.status:'draft'}));persist();
+    if(Array.isArray(d.hostSig)){hostStrokes=d.hostSig;store.set('hostSig',hostStrokes)}if(typeof d.base==='string'&&d.base){store.set('base',d.base);sBase.value=d.base}
+    switchTo((book.find(b=>b.id===d.current)||book[0]).id);buildAdmin()};fr.readAsText(f)});
+
+  /* security */
+  B.appendChild(el('h3',null,'Passcode'));
+  B.appendChild(el('p','hint','The passcode keeps casual visitors on this computer out of admin. It does not protect the data from someone who can open the browser\'s developer tools.'));
+  const pf=el('form');pf.appendChild(input('Current passcode','password','adOld'));pf.appendChild(input('New passcode','password','adNew'));
+  const per=el('p','err'),pok=el('p','ok');per.setAttribute('role','alert');const pgo=el('button','inkbtn dark','Change passcode');pgo.type='submit';
+  const pt=el('div','tools');pt.style.justifyContent='flex-start';pt.appendChild(pgo);pt.appendChild(btn('Lock admin',()=>{admin=false;ss.set('adm',null);adminUI();buildAdmin()}));
+  pf.appendChild(pt);pf.appendChild(per);pf.appendChild(pok);B.appendChild(pf);
+  pf.addEventListener('submit',async e=>{e.preventDefault();per.textContent=pok.textContent='';const c=store.get('admPass'),nw=$('adNew').value;
+    if(!c||await passHash($('adOld').value,c.s)!==c.h){per.textContent='The current passcode is not right.';return}
+    if(nw.length<4){per.textContent='Use at least 4 characters for the new passcode.';return}
+    const s=rid();store.set('admPass',{s,h:await passHash(nw,s)});pf.reset();pok.textContent='Passcode changed.'})}
+
 (async()=>{
-  if(CM){$('editBtn').hidden=true;try{merge(await unzip(part(0)));if(CM==='p')await readLetter()}catch(e){badLink=true}}
+  if(CM){$('adminbar').hidden=true;try{const pub=await unzip(part(0));clientId=typeof pub._i==='string'?pub._i:'';merge(pub);if(CM==='p')await readLetter()}catch(e){badLink=true}}
   render();status.textContent=badLink?'This link looks incomplete. Ask for it to be sent again.':locked?'':CM==='k'?'Press the seal, then enter the PIN you were sent.':'Press the seal to open it.';
-  $('resetBtn').hidden=!locked||!!CM;onScroll()})();
+  $('resetBtn').hidden=!locked||!!CM;adminUI();if(!CM&&H==='admin')openAdmin();onScroll()})();
 })();
 </script>
 
